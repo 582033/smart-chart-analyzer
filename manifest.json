@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "OKX 图表分析助手",
+  "version": "1.0",
+  "description": "分析 OKX 交易图表，提取技术指标，并通过 AI 预测市场走向",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    }
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://www.okx.com/*",
+    "https://api.chatanywhere.tech/*",
+    "https://api.chatanywhere.org/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.okx.com/*"],
+      "js": ["content-script.js"]
+    }
+  ],
+  "icons": {
+    "16": "images/icon16.png",
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
+  }
+}
+

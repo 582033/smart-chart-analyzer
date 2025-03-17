@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+		  <head>
+    <title>OKX 图表分析助手</title>
+    <meta charset="UTF-8">
+				    <style>
+      body {
+        font-family: Arial, sans-serif;
+        width: 350px;
+        padding: 10px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin: 10px 0;
+      }
+      .primary-btn {
+        width: 100%;
+        padding: 10px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .primary-btn:hover {
+        background-color: #218838;
+      }
+      .chart-analysis-container {
+        margin-top: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 10px;
+        background-color: #f9f9f9;
+      }
+      .chart-preview {
+        margin: 10px 0;
+        text-align: center;
+      }
+      .chart-preview img {
+        max-width: 100%;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      .loading {
+        text-align: center;
+        margin: 20px 0;
+        color: #666;
+      }
+      .settings {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+      }
+      .api-key-input {
+        width: 100%;
+        padding: 8px;
+        margin: 5px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      .secondary-btn {
+        width: 100%;
+        padding: 8px;
+        background-color: #4a90e2;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .secondary-btn:hover {
+        background-color: #357ae8;
+      }
+      h2, h3 {
+        margin-top: 0;
+        color: #333;
+      }
+      .api-info {
+        background-color: #f8f9fa;
+        padding: 8px;
+        border-radius: 4px;
+        border-left: 3px solid #4a90e2;
+        margin-top: 5px;
+        display: none; /* 默认折叠 */
+      }
+      .api-info a {
+        color: #4a90e2;
+        text-decoration: none;
+      }
+      .api-info a:hover {
+        text-decoration: underline;
+      }
+      .toggle-info {
+        font-size: 12px;
+        color: #4a90e2;
+        cursor: pointer;
+        margin-top: 5px;
+        display: inline-block;
+      }
+      .toggle-info:hover {
+        text-decoration: underline;
+      }
+      .cost-estimate {
+        margin-top: 10px;
+        text-align: right;
+        color: #666;
+        font-style: italic;
+      }
+    </style>
+				  </head>
+		  <body>
+    <div class="container">
+      <div class="header">
+        <h2>OKX 图表分析助手</h2>
+      </div>
+      
+      <div class="action-buttons">
+        <button id="analyze-chart-btn" class="primary-btn">分析当前图表</button>
+      </div>
+      
+      <div class="chart-analysis-container">
+        <h3>图表分析</h3>
+        <div class="chart-preview">
+          <img id="chart-preview" src="images/placeholder.png" alt="图表预览" />
+        </div>
+        <div id="chart-analysis">
+          <div class="loading">点击"分析当前图表"按钮开始分析</div>
+        </div>
+      </div>
+      
+      <div class="settings">
+        <h3>API 设置</h3>
+        
+        <div id="api-settings">
+          <label for="api-key">ChatAnywhere API 密钥:</label>
+          <input type="password" id="api-key" class="api-key-input" placeholder="输入您的 ChatAnywhere API 密钥">
+          
+          <div style="margin-top: 5px; font-size: 12px;">
+            <span>使用 <a href="https://github.com/chatanywhere/GPT_API_free" target="_blank">ChatAnywhere</a> 免费 API 服务</span>
+            <span class="toggle-info" id="toggle-price-info">查看价格对比 ▼</span>
+          </div>
+          
+          <div class="api-info" id="price-info" style="font-size: 12px; color: #666;">
+            <p>费用对比 (每1K Tokens):</p>
+            <ul id="price-list" style="margin-top: 2px; padding-left: 15px;">
+              <!-- 价格信息将通过JavaScript从配置文件动态加载 -->
+            </ul>
+            <p style="margin-top: 5px; font-style: italic;">注：多模态模型支持图像分析</p>
+          </div>
+          
+          <div style="margin-top: 10px;">
+            <label for="ai-model">AI 模型:</label>
+            <select id="ai-model" class="model-select">
+              <!-- 模型选项将通过JavaScript从配置文件动态加载 -->
+            </select>
+          </div>
+          
+          <div style="margin-top: 10px;">
+            <label for="prompt-template">分析提示词模板:</label>
+            <textarea id="prompt-template" class="api-key-input" style="height: 100px; font-size: 12px;" placeholder="输入您的分析提示词模板"></textarea>
+            <div style="margin-top: 5px; font-size: 12px;">
+              <span class="toggle-info" id="toggle-prompt-info">查看默认提示词 ▼</span>
+            </div>
+            <div class="api-info" id="prompt-info" style="font-size: 12px; color: #666; display: none;">
+              <p>默认提示词:</p>
+              <div style="background-color: #f0f0f0; padding: 5px; border-radius: 3px; margin-top: 5px;">
+                这是一个加密货币交易图表。请根据图中的k线(注意k线时间）等技术指标，预测接下来的价格走势及波动区间等。我需要你尽量简介得输出预测波动范围及价格走势。
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <button id="save-settings" class="secondary-btn" style="margin-top: 5px;">保存设置</button>
+      </div>
+    </div>
+    
+				    <script src="config.js" type="module"></script>
+				    <script src="popup.js" type="module"></script>
+				  </body>
+</html>
+
