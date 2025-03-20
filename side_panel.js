@@ -265,9 +265,15 @@ async function captureAndAnalyzeChart() {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const currentTab = tabs[0];
     
-    // 检查是否在 OKX 网站上
-    if (!currentTab.url.includes('okx.com')) {
-      alert('请在 OKX 网站上使用此功能');
+    console.log('当前标签页URL:', currentTab.url);
+    
+    // 检查是否在支持的网站上
+    const isOKX = currentTab.url.includes('okx.com');
+    const isBinance = currentTab.url.includes('binance.com') || currentTab.url.includes('binance.us');
+    const isSupportedExchange = isOKX || isBinance;
+    
+    if (!isSupportedExchange) {
+      alert('请在 OKX 或币安网站上使用此功能');
       return;
     }
     
@@ -279,7 +285,9 @@ async function captureAndAnalyzeChart() {
     const screenshot = await captureVisibleTab(currentTab.id);
     
     // 显示截图预览
-    document.getElementById('chart-preview').src = screenshot;
+    const chartPreviewImg = document.getElementById('chart-preview');
+    chartPreviewImg.src = screenshot;
+    chartPreviewImg.style.display = 'inline'; // 显示图片
     
     // 更新加载状态
     chartAnalysisElement.innerHTML = '<div class="loading">正在分析图表...</div>';
@@ -357,6 +365,9 @@ async function analyzeChartWithAI(imageDataUrl) {
       throw new Error('当前模型不支持图像分析');
     }
     
+    // 使用统一的提示词
+    const enhancedPrompt = `这是一个加密货币交易图表。${promptTemplate}`;
+    
     // 压缩图像以减少 token 使用
     const compressedImage = await compressImage(imageDataUrl, CHART_CONFIG.MAX_IMAGE_WIDTH);
     console.log('图像已压缩，原始大小:', imageDataUrl.length, '压缩后:', compressedImage.length);
@@ -370,7 +381,7 @@ async function analyzeChartWithAI(imageDataUrl) {
           content: [
             {
               type: "text",
-              text: promptTemplate
+              text: enhancedPrompt
             },
             {
               type: "image_url",

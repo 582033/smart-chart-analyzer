@@ -1,10 +1,23 @@
 // content-script.js
-console.log("OKX 图表分析助手内容脚本开始加载");
+console.log("交易图表分析助手内容脚本开始加载");
+console.log("当前URL:", window.location.href);
+
+// 确定当前网站是否受支持
+const isOKX = window.location.href.includes('okx.com');
+const isBinance = window.location.href.includes('binance.com') || window.location.href.includes('binance.us');
+const isSupportedSite = isOKX || isBinance;
+
+console.log(`网站支持状态: ${isSupportedSite ? '支持' : '不支持'}`);
 
 // 在加载完成后执行的主函数
 function init() {
   try {
-    console.log("页面加载完成，发送内容脚本就绪消息");
+    console.log(`页面加载完成，URL: ${window.location.href}`);
+    
+    if (!isSupportedSite) {
+      console.log("不支持的网站，停止执行");
+      return;
+    }
     
     // 向background.js发送就绪消息
     chrome.runtime.sendMessage({
@@ -19,9 +32,6 @@ function init() {
         
         // 可以开始监听页面上的事件
         setupEventListeners();
-        
-        // 添加侧边栏工具栏按钮
-        addSidePanelButton();
       }
     });
   } catch (error) {
@@ -34,7 +44,12 @@ function setupEventListeners() {
   // 这里可以添加对页面元素的监听
   console.log("设置页面事件监听器");
   
-  // 例如，监听图表容器的变化
+  // 使用通用的图表选择器
+  const chartContainerSelector = '.chart-container, .tradingview-chart, .chart-markup-table, .tv-chart-container';
+  
+  console.log(`使用图表选择器: ${chartContainerSelector}`);
+  
+  // 尝试找到图表容器
   const chartObserver = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
       if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
@@ -43,63 +58,41 @@ function setupEventListeners() {
     });
   });
   
-  // 尝试找到图表容器
-  const chartContainer = document.querySelector('.chart-container');
+  // 尝试使用多个可能的选择器
+  const possibleSelectors = chartContainerSelector.split(',').map(s => s.trim());
+  let chartContainer = null;
+  
+  for (const selector of possibleSelectors) {
+    chartContainer = document.querySelector(selector);
+    if (chartContainer) {
+      console.log(`找到图表容器，使用选择器: ${selector}`);
+      break;
+    }
+  }
+  
   if (chartContainer) {
     chartObserver.observe(chartContainer, { childList: true, subtree: true });
-  }
-}
-
-// 添加侧边栏按钮到页面
-function addSidePanelButton() {
-  // 避免重复添加
-  if (document.getElementById('okx-ai-sidepanel-btn')) return;
-  
-  // 创建按钮
-  const button = document.createElement('button');
-  button.id = 'okx-ai-sidepanel-btn';
-  button.innerHTML = '分析图表';
-  button.style.cssText = `
-    position: fixed;
-    right: 20px;
-    top: 100px;
-    z-index: 9999;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 12px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  `;
-  
-  // 点击按钮打开侧边栏
-  button.addEventListener('click', function() {
-    console.log("页面按钮被点击，请求打开侧边栏");
-    chrome.runtime.sendMessage({
-      action: "openSidePanel"
-    }, function(response) {
-      if (chrome.runtime.lastError) {
-        console.error("发送打开侧边栏消息失败:", chrome.runtime.lastError);
-        alert("打开分析面板失败，请尝试点击扩展图标");
-      } else {
-        console.log("侧边栏打开请求已发送，响应:", response);
-        if (response && !response.success) {
-          console.error("打开侧边栏失败:", response.error);
-          alert("打开分析面板失败，请尝试点击扩展图标");
+    console.log("已设置图表观察器");
+  } else {
+    console.warn("未找到图表容器，将在5秒后重试");
+    
+    // 如果没有立即找到，设置一个延迟重试
+    setTimeout(() => {
+      for (const selector of possibleSelectors) {
+        const retryContainer = document.querySelector(selector);
+        if (retryContainer) {
+          chartObserver.observe(retryContainer, { childList: true, subtree: true });
+          console.log(`延迟后找到并设置图表观察器，使用选择器: ${selector}`);
+          return;
         }
       }
-    });
-  });
-  
-  document.body.appendChild(button);
-  
-  console.log("已添加侧边栏按钮到页面");
+      console.error("重试后仍未找到图表容器");
+    }, 5000);
+  }
 }
 
 // 页面加载完成后，通知扩展已准备好
 window.addEventListener('load', init);
 
-console.log("OKX 图表分析助手内容脚本已加载完成");
+console.log("交易图表分析助手内容脚本已加载完成");
 
