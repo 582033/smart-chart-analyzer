@@ -6,7 +6,7 @@ let apiKey = '';
 
 // 初始化
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('扩展已加载');
+  console.log('侧边栏已加载');
   
   // 加载模型选项
   loadModelOptions();
@@ -38,8 +38,17 @@ document.addEventListener('DOMContentLoaded', function() {
     this.textContent = isVisible ? '查看默认提示词 ▼' : '隐藏默认提示词 ▲';
   });
   
+  // 添加刷新余额按钮事件
+  document.getElementById('refresh-balance').addEventListener('click', function() {
+    console.log('刷新余额按钮被点击');
+    queryApiBalance();
+  });
+  
   // 加载保存的设置
   loadSettings();
+  
+  // 加载API余额信息
+  loadApiBalance();
   
   // 添加图表分析按钮事件
   document.getElementById('analyze-chart-btn').addEventListener('click', async function() {
@@ -47,8 +56,31 @@ document.addEventListener('DOMContentLoaded', function() {
     await captureAndAnalyzeChart();
   });
   
+  // 添加标签切换功能
+  setupTabNavigation();
+  
   console.log('所有事件监听器已设置');
 });
+
+// 设置标签页导航
+function setupTabNavigation() {
+  const tabs = document.querySelectorAll('.tab');
+  
+  tabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+      // 更新激活的标签页
+      const tabName = this.getAttribute('data-tab');
+      
+      // 移除所有标签页的激活状态
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      // 设置当前标签页为激活状态
+      this.classList.add('active');
+      document.getElementById(`${tabName}-tab`).classList.add('active');
+    });
+  });
+}
 
 // 从配置文件加载模型选项
 function loadModelOptions() {
@@ -179,6 +211,11 @@ function saveSettings() {
     // 更新全局变量
     apiKey = userApiKey;
     
+    // API密钥变化时，刷新余额
+    if (userApiKey) {
+      queryApiBalance();
+    }
+    
     // 显示保存成功消息
     const saveBtn = document.getElementById('save-settings');
     const originalText = saveBtn.textContent;
@@ -209,6 +246,9 @@ function showApiKeyGuide() {
       <p>如需更多使用次数，可以考虑购买付费版。</p>
     </div>
   `;
+  
+  // 自动切换到设置标签
+  document.querySelector('.tab[data-tab="settings"]').click();
 }
 
 // 捕获并分析图表
@@ -351,7 +391,7 @@ async function analyzeChartWithAI(imageDataUrl) {
     const aiResponse = await fetch(apiEndpoint, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `${apiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(requestBody)
@@ -409,17 +449,6 @@ async function compressImage(dataUrl, maxWidth) {
 }
 
 // 估算 API 费用
-// 生成图表哈希（简单实现）
-async function generateChartHash(imageData) {
-  return btoa(imageData.slice(0, 50)).replace(/[^a-z0-9]/gi, '').slice(0, 16);
-}
-
-// 生成图片哈希（用于检测图表更新）
-async function generateImageHash(imageData) {
-  const buffer = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(imageData));
-  return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
 function estimateApiCost(modelName, responseLength) {
   // 估算输入和输出的 token 数量
   // 一般来说，1个中文字符约等于1-1.5个token
@@ -439,3 +468,152 @@ function estimateApiCost(modelName, responseLength) {
   return totalCost.toFixed(4);
 }
 
+// 从保存的数据加载API余额信息
+function loadApiBalance() {
+  console.log('尝试加载API余额信息');
+  
+  chrome.storage.local.get([
+    STORAGE_KEYS.API_BALANCE,
+    STORAGE_KEYS.API_BALANCE_UPDATED
+  ], function(result) {
+    if (result[STORAGE_KEYS.API_BALANCE]) {
+      displayApiBalance(result[STORAGE_KEYS.API_BALANCE], result[STORAGE_KEYS.API_BALANCE_UPDATED]);
+    } else {
+      // 如果没有保存的余额信息，且有API密钥，尝试查询
+      if (apiKey) {
+        queryApiBalance();
+      } else {
+        console.log('未找到保存的API余额信息，且未设置API密钥');
+      }
+    }
+  });
+}
+
+// 查询API余额
+function queryApiBalance() {
+  if (!apiKey) {
+    console.warn('未设置API密钥，无法查询余额');
+    alert('请先设置API密钥');
+    return;
+  }
+  
+  // 显示加载状态
+  const refreshBtn = document.getElementById('refresh-balance');
+  refreshBtn.classList.add('loading');
+  document.getElementById('api-balance').textContent = '查询中...';
+  document.getElementById('balance-last-updated').textContent = '正在查询...';
+  
+  // 向background脚本发送查询请求
+  chrome.runtime.sendMessage({
+    action: "queryApiBalance"
+  }, function(response) {
+    // 取消加载状态
+    refreshBtn.classList.remove('loading');
+    
+    if (chrome.runtime.lastError) {
+      console.error('发送查询余额请求失败:', chrome.runtime.lastError);
+      const errorData = {
+        errorMessage: chrome.runtime.lastError.message || "查询失败",
+        timestamp: Date.now()
+      };
+      displayApiBalance(errorData, Date.now());
+      return;
+    }
+    
+    if (response && response.success) {
+      console.log('余额查询成功:', response.balance);
+      displayApiBalance(response.balance, Date.now());
+    } else {
+      console.error('余额查询失败:', response.error);
+      const errorData = {
+        errorMessage: response.error || "查询失败，请检查网络连接和API密钥",
+        timestamp: Date.now()
+      };
+      displayApiBalance(errorData, Date.now());
+    }
+  });
+}
+
+// 显示API余额
+function displayApiBalance(balanceData, timestamp) {
+  const balanceElement = document.getElementById('api-balance');
+  const lastUpdatedElement = document.getElementById('balance-last-updated');
+  
+  try {
+    console.log('API余额数据:', balanceData);
+    
+    // 首先检查是否有错误信息
+    if (balanceData.error || balanceData.errorMessage) {
+      // 显示API错误信息
+      const errorMsg = balanceData.errorMessage || 
+                      (balanceData.error && balanceData.error.message) || 
+                      "查询API余额失败";
+                      
+      balanceElement.textContent = "错误";
+      balanceElement.style.color = '#e74c3c'; // 红色表示错误
+      
+      // 在更新时间位置显示错误消息
+      if (balanceData.error && balanceData.error.code === "401 UNAUTHORIZED") {
+        lastUpdatedElement.innerHTML = `<span style="color:#e74c3c">API密钥无效，请检查您的密钥</span>`;
+      } else {
+        lastUpdatedElement.innerHTML = `<span style="color:#e74c3c">${errorMsg}</span>`;
+      }
+      return;
+    }
+    
+    // 检查不同的返回格式
+    let balanceValue;
+    let balanceUsed;
+    
+    if (balanceData.balanceTotal !== undefined) {
+      // ChatAnywhere实际返回的格式
+      balanceValue = balanceData.balanceTotal - balanceData.balanceUsed;
+      balanceUsed = balanceData.balanceUsed;
+    } else if (balanceData.code === 0 && balanceData.data && balanceData.data.balance) {
+      // 之前预期的ChatAnywhere格式
+      balanceValue = balanceData.data.balance;
+    } else if (balanceData.object === 'account' && balanceData.balance !== undefined) {
+      // 类似OpenAI的格式
+      balanceValue = balanceData.balance;
+    } else if (balanceData.total_amount !== undefined) {
+      // 另一种可能的格式
+      balanceValue = balanceData.total_amount;
+    } else {
+      // 无法解析
+      balanceElement.textContent = '数据格式错误';
+      balanceElement.style.color = '#e74c3c';
+      console.error('未知的余额数据格式:', balanceData);
+      return;
+    }
+    
+    // 显示余额值（如果有已使用额度，一并显示）
+    if (balanceUsed !== undefined) {
+      balanceElement.textContent = `${balanceValue.toFixed(2)}/${balanceData.balanceTotal.toFixed(2)} CA币`;
+    } else {
+      balanceElement.textContent = `${balanceValue.toFixed(2)} CA币`;
+    }
+    
+    // 设置余额颜色 - 根据剩余百分比而不是绝对值
+    const totalBalance = balanceData.balanceTotal || balanceValue;
+    const usedPercent = balanceData.balanceUsed ? (balanceData.balanceUsed / totalBalance) * 100 : 0;
+    
+    if (usedPercent > 80) {
+      balanceElement.style.color = '#e74c3c'; // 红色，余额不足
+    } else if (usedPercent > 50) {
+      balanceElement.style.color = '#f39c12'; // 橙色，余额较低
+    } else {
+      balanceElement.style.color = '#27ae60'; // 绿色，余额充足
+    }
+    
+    // 更新最后查询时间
+    if (timestamp) {
+      const date = new Date(timestamp);
+      lastUpdatedElement.textContent = `最后更新: ${date.toLocaleString()}`;
+    }
+  } catch (error) {
+    console.error('解析余额数据失败:', error);
+    balanceElement.textContent = '格式错误';
+    balanceElement.style.color = '#e74c3c';
+    lastUpdatedElement.textContent = '解析余额数据失败';
+  }
+} 

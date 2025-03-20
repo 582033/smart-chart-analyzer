@@ -129,7 +129,9 @@ const STORAGE_KEYS = {
   API_KEY: "openaiApiKey",
   AI_MODEL: "aiModel",
   PROMPT_TEMPLATE: "promptTemplate",
-  PRICE_ALERTS: "priceAlerts"
+  PRICE_ALERTS: "priceAlerts",
+  API_BALANCE: "apiBalance",
+  API_BALANCE_UPDATED: "apiBalanceUpdated"
 };
 
 // 图表分析配置

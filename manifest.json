@@ -4,7 +4,6 @@
   "version": "1.0",
   "description": "分析 OKX 交易图表，提取技术指标，并通过 AI 预测市场走向",
   "action": {
-    "default_popup": "popup.html",
     "default_icon": {
       "16": "images/icon16.png",
       "48": "images/icon48.png",
@@ -15,7 +14,10 @@
     "storage",
     "activeTab",
     "scripting",
-    "tabs"
+    "tabs",
+    "sidePanel",
+    "notifications",
+    "alarms"
   ],
   "host_permissions": [
     "https://www.okx.com/*",
@@ -32,6 +34,9 @@
       "js": ["content-script.js"]
     }
   ],
+  "side_panel": {
+    "default_path": "side_panel.html"
+  },
   "icons": {
     "16": "images/icon16.png",
     "48": "images/icon48.png",
