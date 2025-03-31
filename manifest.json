@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "加密货币图表分析助手",
+  "name": "智能图表分析助手",
   "version": "1.0",
-  "description": "分析 OKX 和币安交易图表，提取技术指标，并通过 AI 预测市场走向",
+  "description": "分析 OKX 和 TradingView 交易图表，提取技术指标，并通过 AI 预测市场走向",
   "action": {
     "default_icon": {
       "16": "images/icon16.png",
@@ -21,8 +21,7 @@
   ],
   "host_permissions": [
     "https://www.okx.com/*",
-    "https://*.binance.com/*",
-    "https://*.binance.us/*",
+    "https://www.tradingview.com/*",
     "https://api.chatanywhere.tech/*",
     "https://api.chatanywhere.org/*"
   ],
@@ -33,9 +32,8 @@
   "content_scripts": [
     {
       "matches": [
-        "*://*.okx.com/*", 
-        "*://*.binance.com/*", 
-        "*://*.binance.us/*"
+        "*://*.okx.com/*",
+        "*://*.tradingview.com/*"
       ],
       "js": ["content-script.js"]
     }

@@ -269,11 +269,11 @@ async function captureAndAnalyzeChart() {
     
     // 检查是否在支持的网站上
     const isOKX = currentTab.url.includes('okx.com');
-    const isBinance = currentTab.url.includes('binance.com') || currentTab.url.includes('binance.us');
-    const isSupportedExchange = isOKX || isBinance;
+    const isTradingView = currentTab.url.includes('tradingview.com');
+    const isSupportedExchange = isOKX || isTradingView;
     
     if (!isSupportedExchange) {
-      alert('请在 OKX 或币安网站上使用此功能');
+      alert('请在 OKX 或 TradingView 网站上使用此功能');
       return;
     }
     
@@ -321,6 +321,7 @@ async function captureAndAnalyzeChart() {
 function captureVisibleTab(tabId) {
   console.log('捕获标签页截图, tabId:', tabId);
   return new Promise((resolve, reject) => {
+    // 使用 null 作为第一个参数，表示当前窗口
     chrome.tabs.captureVisibleTab(null, { format: 'png' }, function(dataUrl) {
       if (chrome.runtime.lastError) {
         console.error('截图错误:', chrome.runtime.lastError);

@@ -174,6 +174,38 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
       }
+      .kline-pattern {
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+        display: flex; /* Use flexbox for layout */
+        gap: 15px; /* Space between SVG and text */
+        align-items: flex-start; /* Align items at the top */
+      }
+      .kline-pattern svg {
+        flex-shrink: 0; /* Prevent SVG from shrinking */
+        margin-top: 5px; /* Align SVG slightly lower */
+        border: 1px solid #eee;
+        padding: 2px;
+      }
+      .kline-pattern .description {
+        flex-grow: 1; /* Allow text to take remaining space */
+      }
+      .kline-pattern h4 {
+        margin-bottom: 5px;
+        color: #4a90e2;
+        margin-top: 0; /* Remove default top margin */
+      }
+      .kline-pattern p {
+        font-size: 13px;
+        color: #555;
+        margin-top: 3px;
+      }
+      /* SVG Candle Styles */
+      .candle-body-green { fill: #26a69a; stroke: #13574e; stroke-width: 0.5; }
+      .candle-body-red { fill: #ef5350; stroke: #8c3231; stroke-width: 0.5; }
+      .candle-wick { stroke: #555; stroke-width: 0.5; }
+      .candle-gap { stroke: #ccc; stroke-width: 0.5; stroke-dasharray: 2,2; }
     </style>
   </head>
   <body>
@@ -181,6 +213,7 @@
       <div class="tabs">
         <div class="tab active" data-tab="analysis">分析</div>
         <div class="tab" data-tab="settings">设置</div>
+        <div class="tab" data-tab="kline">K线形态对照</div>
       </div>
       
       <div id="analysis-tab" class="tab-content active">
@@ -258,6 +291,153 @@
           
           <button id="save-settings" class="secondary-btn" style="margin-top: 5px;">保存设置</button>
         </div>
+      </div>
+
+      <div id="kline-tab" class="tab-content">
+        <h3>常见K线形态解读</h3>
+        <p style="font-size: 12px; color: #888; margin-bottom: 15px;">图示说明：绿色代表阳线 (上涨)，红色代表阴线 (下跌)。</p>
+        
+        <!-- Hammer -->
+        <div class="kline-pattern">
+          <svg width="30" height="60" viewBox="0 0 30 60">
+            <line class="candle-wick" x1="15" y1="5" x2="15" y2="10"/>
+            <rect class="candle-body-green" x="10" y="10" width="10" height="12"/>
+            <line class="candle-wick" x1="15" y1="22" x2="15" y2="55"/>
+          </svg>
+          <div class="description">
+            <h4>锤头线 (Hammer)</h4>
+            <p><strong>形态:</strong> 下影线很长 (通常是实体2倍以上)，实体较小，上影线很短或没有。出现在下跌趋势底部。</p>
+            <p><strong>解读:</strong> 看涨反转信号。表明下跌中买方开始抵抗并将价格推高。</p>
+          </div>
+        </div>
+        
+        <!-- Hanging Man -->
+        <div class="kline-pattern">
+          <svg width="30" height="60" viewBox="0 0 30 60">
+            <line class="candle-wick" x1="15" y1="5" x2="15" y2="10"/>
+            <rect class="candle-body-red" x="10" y="10" width="10" height="12"/>
+            <line class="candle-wick" x1="15" y1="22" x2="15" y2="55"/>
+          </svg>
+          <div class="description">
+            <h4>上吊线 (Hanging Man)</h4>
+            <p><strong>形态:</strong> 与锤头线形态相同，但出现在上涨趋势顶部。</p>
+            <p><strong>解读:</strong> 看跌反转信号。表明上涨中卖方开始施压，需警惕。</p>
+          </div>
+        </div>
+
+        <!-- Inverted Hammer -->
+        <div class="kline-pattern">
+          <svg width="30" height="60" viewBox="0 0 30 60">
+            <line class="candle-wick" x1="15" y1="5" x2="15" y2="38"/>
+            <rect class="candle-body-green" x="10" y="38" width="10" height="12"/>
+            <line class="candle-wick" x1="15" y1="50" x2="15" y2="55"/>
+          </svg>
+          <div class="description">
+            <h4>倒锤头线 (Inverted Hammer)</h4>
+            <p><strong>形态:</strong> 上影线很长，实体较小，下影线很短或没有。出现在下跌趋势底部。</p>
+            <p><strong>解读:</strong> 看涨反转信号。表明买方尝试推高价格，但力量尚不稳固。</p>
+          </div>
+        </div>
+
+        <!-- Shooting Star -->
+        <div class="kline-pattern">
+          <svg width="30" height="60" viewBox="0 0 30 60">
+            <line class="candle-wick" x1="15" y1="5" x2="15" y2="38"/>
+            <rect class="candle-body-red" x="10" y="38" width="10" height="12"/>
+            <line class="candle-wick" x1="15" y1="50" x2="15" y2="55"/>
+          </svg>
+          <div class="description">
+            <h4>射击之星 (Shooting Star)</h4>
+            <p><strong>形态:</strong> 与倒锤头线形态相同，但出现在上涨趋势顶部。</p>
+            <p><strong>解读:</strong> 看跌反转信号。表明价格冲高回落，卖方压力增大。</p>
+          </div>
+        </div>
+
+        <!-- Bullish Engulfing -->
+        <div class="kline-pattern">
+          <svg width="50" height="60" viewBox="0 0 50 60">
+            <!-- Candle 1 (Red) -->
+            <line class="candle-wick" x1="12" y1="10" x2="12" y2="15"/>
+            <rect class="candle-body-red" x="7" y="15" width="10" height="15"/>
+            <line class="candle-wick" x1="12" y1="30" x2="12" y2="35"/>
+            <!-- Candle 2 (Green) -->
+            <line class="candle-wick" x1="37" y1="5" x2="37" y2="10"/>
+            <rect class="candle-body-green" x="32" y="10" width="10" height="30"/>
+            <line class="candle-wick" x1="37" y1="40" x2="37" y2="45"/>
+          </svg>
+          <div class="description">
+            <h4>看涨吞没 (Bullish Engulfing)</h4>
+            <p><strong>形态:</strong> 第一根是阴线，第二根是阳线，第二根阳线的实体完全覆盖第一根阴线的实体。</p>
+            <p><strong>解读:</strong> 强烈的看涨反转信号。</p>
+          </div>
+        </div>
+
+        <!-- Bearish Engulfing -->
+        <div class="kline-pattern">
+          <svg width="50" height="60" viewBox="0 0 50 60">
+            <!-- Candle 1 (Green) -->
+            <line class="candle-wick" x1="12" y1="10" x2="12" y2="15"/>
+            <rect class="candle-body-green" x="7" y="15" width="10" height="15"/>
+            <line class="candle-wick" x1="12" y1="30" x2="12" y2="35"/>
+            <!-- Candle 2 (Red) -->
+            <line class="candle-wick" x1="37" y1="5" x2="37" y2="10"/>
+            <rect class="candle-body-red" x="32" y="10" width="10" height="30"/>
+            <line class="candle-wick" x1="37" y1="40" x2="37" y2="45"/>
+          </svg>
+          <div class="description">
+            <h4>看跌吞没 (Bearish Engulfing)</h4>
+            <p><strong>形态:</strong> 第一根是阳线，第二根是阴线，第二根阴线的实体完全覆盖第一根阳线的实体。</p>
+            <p><strong>解读:</strong> 强烈的看跌反转信号。</p>
+          </div>
+        </div>
+
+        <!-- Morning Star -->
+        <div class="kline-pattern">
+          <svg width="70" height="60" viewBox="0 0 70 60">
+            <!-- Candle 1 (Long Red) -->
+            <line class="candle-wick" x1="10" y1="5" x2="10" y2="10"/>
+            <rect class="candle-body-red" x="5" y="10" width="10" height="30"/>
+            <line class="candle-wick" x1="10" y1="40" x2="10" y2="45"/>
+            <!-- Candle 2 (Star, Green, Gapped Down) -->
+            <line class="candle-wick" x1="35" y1="45" x2="35" y2="48"/>
+            <rect class="candle-body-green" x="30" y="48" width="10" height="6"/>
+            <line class="candle-wick" x1="35" y1="54" x2="35" y2="57"/>
+            <!-- Candle 3 (Long Green) -->
+            <line class="candle-wick" x1="60" y1="10" x2="60" y2="15"/>
+            <rect class="candle-body-green" x="55" y="15" width="10" height="25"/>
+            <line class="candle-wick" x1="60" y1="40" x2="60" y2="45"/>
+          </svg>
+          <div class="description">
+            <h4>早晨之星 (Morning Star)</h4>
+            <p><strong>形态:</strong> 长阴线 + 向下跳空的小实体星线 + 深入第一根阴线的长阳线。</p>
+            <p><strong>解读:</strong> 强烈的底部看涨反转信号。</p>
+          </div>
+        </div>
+
+        <!-- Evening Star -->
+        <div class="kline-pattern">
+          <svg width="70" height="60" viewBox="0 0 70 60">
+            <!-- Candle 1 (Long Green) -->
+            <line class="candle-wick" x1="10" y1="15" x2="10" y2="20"/>
+            <rect class="candle-body-green" x="5" y="20" width="10" height="30"/>
+            <line class="candle-wick" x1="10" y1="50" x2="10" y2="55"/>
+            <!-- Candle 2 (Star, Red, Gapped Up) -->
+            <line class="candle-wick" x1="35" y1="3" x2="35" y2="6"/>
+            <rect class="candle-body-red" x="30" y="6" width="10" height="6"/>
+            <line class="candle-wick" x1="35" y1="12" x2="35" y2="15"/>
+            <!-- Candle 3 (Long Red) -->
+            <line class="candle-wick" x1="60" y1="15" x2="60" y2="20"/>
+            <rect class="candle-body-red" x="55" y="20" width="10" height="25"/>
+            <line class="candle-wick" x1="60" y1="45" x2="60" y2="50"/>
+          </svg>
+          <div class="description">
+            <h4>黄昏之星 (Evening Star)</h4>
+            <p><strong>形态:</strong> 长阳线 + 向上跳空的小实体星线 + 深入第一根阳线的长阴线。</p>
+            <p><strong>解读:</strong> 强烈的顶部看跌反转信号。</p>
+          </div>
+        </div>
+        
+        <p style="font-size: 12px; color: #888; margin-top: 20px;">注意：K线形态需要结合趋势、成交量和其他指标综合判断，不能单独作为交易依据。</p>
       </div>
     </div>
     

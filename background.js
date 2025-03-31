@@ -184,8 +184,8 @@ chrome.action.onClicked.addListener((tab) => {
   
   // 检查当前网站是否为支持的交易所
   const isOKX = tab.url.includes('okx.com');
-  const isBinance = tab.url.includes('binance.com') || tab.url.includes('binance.us');
-  const isSupportedExchange = isOKX || isBinance;
+  const isTradingView = tab.url.includes('tradingview.com');
+  const isSupportedExchange = isOKX || isTradingView;
   
   console.log(`网站URL: ${tab.url}, 是否支持: ${isSupportedExchange}`);
   
@@ -212,10 +212,11 @@ chrome.action.onClicked.addListener((tab) => {
     // 不在支持的网站上时显示提示
     chrome.action.setTitle({
       tabId: tab.id,
-      title: '请在OKX或币安网站上使用此扩展'
+      title: '请在OKX或TradingView网站上使用此扩展'
     });
     
-    alert('请在OKX或币安网站上使用此扩展');
+    // 在不支持的网站上不应该弹出alert，只修改标题
+    // alert('请在OKX或TradingView网站上使用此扩展');
   }
 });
 
