@@ -270,10 +270,12 @@ async function captureAndAnalyzeChart() {
     // 检查是否在支持的网站上
     const isOKX = currentTab.url.includes('okx.com');
     const isTradingView = currentTab.url.includes('tradingview.com');
-    const isSupportedExchange = isOKX || isTradingView;
+    const isGate = currentTab.url.includes('gate.com');
+    const isBinance = currentTab.url.includes('binance.com');
+    const isSupportedExchange = isOKX || isTradingView || isGate || isBinance;
     
     if (!isSupportedExchange) {
-      alert('请在 OKX 或 TradingView 网站上使用此功能');
+      alert('请在 OKX、TradingView、Gate 或 Binance 网站上使用此功能');
       return;
     }
     

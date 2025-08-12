@@ -5,9 +5,11 @@ console.log("当前URL:", window.location.href);
 // 确定当前网站是否受支持
 const isOKX = window.location.href.includes('okx.com');
 const isTradingView = window.location.href.includes('tradingview.com');
-const isSupportedSite = isOKX || isTradingView;
+const isGate = window.location.href.includes('gate.com');
+const isBinance = window.location.href.includes('binance.com');
+const isSupportedSite = isOKX || isTradingView || isGate || isBinance;
 
-console.log(`网站支持状态: ${isSupportedSite ? '支持' : '不支持'} (OKX: ${isOKX}, TradingView: ${isTradingView})`);
+console.log(`网站支持状态: ${isSupportedSite ? '支持' : '不支持'} (OKX: ${isOKX}, TradingView: ${isTradingView}, Gate: ${isGate}, Binance: ${isBinance})`);
 
 // 在加载完成后执行的主函数
 function init() {

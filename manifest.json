@@ -22,6 +22,8 @@
   "host_permissions": [
     "https://www.okx.com/*",
     "https://www.tradingview.com/*",
+    "https://www.gate.com/*",
+    "https://www.binance.com/*",
     "https://api.chatanywhere.tech/*",
     "https://api.chatanywhere.org/*"
   ],
@@ -33,7 +35,9 @@
     {
       "matches": [
         "*://*.okx.com/*",
-        "*://*.tradingview.com/*"
+        "*://*.tradingview.com/*",
+        "*://*.gate.com/*",
+        "*://*.binance.com/*"
       ],
       "js": ["content-script.js"]
     }

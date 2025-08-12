@@ -15,6 +15,8 @@
 *   **支持的网站**:
     *   OKX (`okx.com`)
     *   TradingView (`tradingview.com`)
+    *   Gate (`gate.com`)
+    *   Binance (`binance.com`)
 *   **K 线形态对照**: 内置常见 K 线形态的 SVG 图示和文字解读，方便快速参考。
 *   **可配置设置**:
     *   用户可以输入自己的 ChatAnywhere API 密钥。
@@ -36,7 +38,7 @@
 
 ## 💡 使用方法
 
-1.  导航到支持的网站（OKX 或 TradingView）的图表页面。
+1.  导航到支持的网站（OKX、TradingView、Gate 或 Binance）的图表页面。
 2.  点击浏览器工具栏中的“智能图表分析助手”图标，打开侧边栏。
 3.  **首次使用**:
     *   切换到“**设置**”标签页。
