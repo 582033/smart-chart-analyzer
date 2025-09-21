@@ -64,22 +64,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     return true; // 表示异步sendResponse
   }
   
-  if (message.type === "REQUEST_PREDICTION") {
-    const data = message.payload;
-    // 使用立即执行的异步函数处理
-    (async () => {
-      try {
-        const prediction = await getGptPrediction(data);
-        // 把结果再回发给content script或popup
-        sendResponse({ success: true, prediction });
-      } catch (err) {
-        console.error("GPT error:", err);
-        sendResponse({ success: false, error: err.message });
-      }
-    })();
-    return true; // 表示异步sendResponse
-  }
-  
+
   return true; // 表示异步sendResponse
 });
 
@@ -182,87 +167,27 @@ chrome.runtime.onInstalled.addListener(function(details) {
 chrome.action.onClicked.addListener((tab) => {
   console.log("扩展图标被点击, tab:", tab.url);
   
-  // 检查当前网站是否为支持的交易所
-  const isOKX = tab.url.includes('okx.com');
-  const isTradingView = tab.url.includes('tradingview.com');
-  const isGate = tab.url.includes('gate.com');
-  const isBinance = tab.url.includes('binance.com');
-  const isSupportedExchange = isOKX || isTradingView || isGate || isBinance;
-  
-  console.log(`网站URL: ${tab.url}, 是否支持: ${isSupportedExchange}`);
-  
-  // 当在支持的交易所网站上时，打开侧边栏
-  if (isSupportedExchange) {
-    try {
-      chrome.sidePanel.open({ tabId: tab.id }).then(() => {
-        console.log("侧边栏已打开");
-      }).catch(err => {
-        console.error("打开侧边栏失败:", err);
-        // 如果打开失败，尝试使用setOptions再次确认设置
-        chrome.sidePanel.setOptions({
-          path: 'side_panel.html',
-          enabled: true
-        }).then(() => {
-          // 重试打开
-          return chrome.sidePanel.open({ tabId: tab.id });
-        });
+  // 总是尝试打开侧边栏
+  try {
+    chrome.sidePanel.open({ tabId: tab.id }).then(() => {
+      console.log("侧边栏已打开");
+    }).catch(err => {
+      console.error("打开侧边栏失败:", err);
+      // 如果打开失败，尝试使用setOptions再次确认设置
+      chrome.sidePanel.setOptions({
+        path: 'side_panel.html',
+        enabled: true
+      }).then(() => {
+        // 重试打开
+        return chrome.sidePanel.open({ tabId: tab.id });
       });
-    } catch (error) {
-      console.error("尝试打开侧边栏出错:", error);
-    }
-  } else {
-    // 不在支持的网站上时显示提示
-    chrome.action.setTitle({
-      tabId: tab.id,
-      title: '请在OKX、TradingView、Gate或Binance网站上使用此扩展'
     });
-    
-    // 在不支持的网站上不应该弹出alert，只修改标题
-    // alert('请在OKX、TradingView、Gate或Binance网站上使用此扩展');
+  } catch (error) {
+    console.error("尝试打开侧边栏出错:", error);
   }
 });
 
-// 调用OpenAI GPT接口
-async function getGptPrediction(cryptoData) {
-  const prompt = generatePrompt(cryptoData);
 
-  const reqBody = {
-    model: "gpt-3.5-turbo",
-    messages: [
-      { role: "system", content: "You are a financial analyst for crypto." },
-      { role: "user", content: prompt }
-    ],
-    max_tokens: 150,
-    temperature: 0.7
-  };
-
-  const response = await fetch(API_CONFIG.OPENAI_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `${openaiApiKey}`
-    },
-    body: JSON.stringify(reqBody)
-  });
-
-  const json = await response.json();
-  if (json.error) {
-    throw new Error(json.error.message);
-  }
-  // GPT-3.5-turbo 返回的数据结构
-  return json.choices[0].message.content.trim();
-}
-
-// 根据抓取的数据拼接提示词
-function generatePrompt({ price, volume, rsi, macd }) {
-  return `当前ETH行情数据：
-- 价格: ${price}
-- 成交量: ${volume}
-- RSI: ${rsi}
-- MACD: ${macd}
-
-基于以上指标，预测未来1小时内ETH的短线走势，并给出简要理由。`;
-}
 
 console.log("加密货币图表分析助手后台脚本已加载完成");
 

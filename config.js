@@ -8,112 +8,81 @@ const API_CONFIG = {
 
 // 模型配置
 const AI_MODELS = {
-  DEFAULT: "gpt-4o-ca",
+  DEFAULT: "grok-4",
   IMAGE_SUPPORTED: [
-    'gpt-o1', 
-    'o1-mini-ca',
-    'gpt-4o', 
-    'gpt-4o-ca', 
-    'gpt-4o-mini',
-    'gpt-4o-mini-ca',
-    'gpt-4-vision-preview',
-    'gpt-4-turbo',
-    'deepseek-r1',
-    'gpt-4.5-preview',
-    'grok-3-reasoner',
-    'grok-3-deepsearch'
+    'grok-4',
+    'qwen3-235b-a22b',
+    'gpt-5',
+    'gpt-5-ca',
+    'gpt-4.1', 
+    'gpt-4.1-ca', 
+    'gemini-2.5-pro', 
+    'gemini-2.5-flash', 
+    'deepseek-v3.1-think-250821'
   ],
   // 模型详细信息配置
   MODELS_INFO: [
     {
-      name: "gpt-4o-mini",
-      description: "最经济",
-      inputRate: 0.00105,
-      outputRate: 0.0042,
-      supportsImages: true
-    },
-    {
-      name: "gpt-4o-mini-ca",
-      description: "三方模型,便宜,略微不稳定",
-      inputRate: 0.00075,
-      outputRate: 0.003,
-      supportsImages: true
-    },
-    {
-      name: "gpt-4o",
+      name: "gpt-5",
       description: "强大的多模态模型",
-      inputRate: 0.0175,
+      inputRate: 0.00875,
       outputRate: 0.07,
       supportsImages: true
     },
     {
-      name: "gpt-4o-ca",
+      name: "gpt-5-ca",
       description: "三方模型,便宜,略微不稳定",
-      inputRate: 0.01,
+      inputRate: 0.005,
       outputRate: 0.04,
       supportsImages: true
     },
     {
-      name: "gpt-4.5-preview",
-      description: "OpenAI最新预览模型",
-      inputRate: 0.525,
-      outputRate: 1.05,
+      name: "gpt-4.1",
+      description: "强大的多模态模型",
+      inputRate: 0.014,
+      outputRate: 0.056,
       supportsImages: true
     },
     {
-      name: "gpt-4-turbo",
-      description: "稳定的多模态模型",
-      inputRate: 0.0105,
-      outputRate: 0.0315,
+      name: "gpt-4.1-ca",
+      description: "三方模型,便宜,略微不稳定",
+      inputRate: 0.008,
+      outputRate: 0.032,
       supportsImages: true
     },
     {
-      name: "gpt-4-vision-preview",
-      description: "专业图像分析",
-      inputRate: 0.0105,
-      outputRate: 0.0315,
+      name: "gemini-2.5-pro",
+      description: "强大的多模态模型",
+      inputRate: 0.007,
+      outputRate: 0.04,
       supportsImages: true
     },
     {
-      name: "gpt-3.5-turbo",
-      description: "经济",
-      inputRate: 0.0035,
-      outputRate: 0.0105,
-      supportsImages: false
+      name: "gemini-2.5-flash",
+      description: "经济的多模态模型",
+      inputRate: 0.0006,
+      outputRate: 0.014,
+      supportsImages: true
     },
     {
-      name: "gpt-3.5-turbo-ca",
-      description: "最便宜",
-      inputRate: 0.001,
-      outputRate: 0.003,
-      supportsImages: false
-    },
-    {
-      name: "gpt-4",
-      description: "每天3次",
-      inputRate: 0.21,
-      outputRate: 0.42,
-      supportsImages: false
-    },
-    {
-      name: "deepseek-r1",
-      description: "专业推理分析",
+      name: "deepseek-v3.1-think-250821",
+      description: "深度思考模型",
       inputRate: 0.0024,
-      outputRate: 0.0096,
+      outputRate: 0.0072,
       supportsImages: true
     },
     {
-      name: "grok-3-reasoner",
-      description: "推理增强",
-      inputRate: 0.016,
-      outputRate: 0.08,
+      name: "grok-4",
+      description: "强大的多模态模型",
+      inputRate: 0.012,
+      outputRate: 0.06,
       supportsImages: true
     },
     {
-      name: "grok-3-deepsearch",
-      description: "深度搜索",
-      inputRate: 0.016,
-      outputRate: 0.08,
+      name: "qwen3-235b-a22b",
+      description: "强大的多模态模型",
+      inputRate: 0.0014,
+      outputRate: 0.0056,
       supportsImages: true
     }
   ]
@@ -135,8 +104,8 @@ const STORAGE_KEYS = {
 
 // 图表分析配置
 const CHART_CONFIG = {
-  MAX_IMAGE_WIDTH: 800,
-  MAX_TOKENS: 500
+  MAX_IMAGE_WIDTH: 600,
+  MAX_TOKENS: 1024
 };
 
 // 导出所有配置

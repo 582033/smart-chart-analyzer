@@ -3,10 +3,37 @@ import { API_CONFIG, AI_MODELS, DEFAULT_PROMPTS, STORAGE_KEYS, CHART_CONFIG } fr
 
 // 全局变量
 let apiKey = '';
+let loadingInterval = null; // 用于加载动画
+// 缓存 DOM 元素
+let chartAnalysisElement, chartPreviewImg, analyzeChartBtn, uploadChartContainer, 
+    analyzeChartContainer, uploadChartBtn, chartFileInput, saveSettingsBtn, 
+    apiKeyInput, aiModelSelect, promptTemplateTextarea, priceInfoDiv, 
+    promptInfoDiv, togglePriceInfoBtn, togglePromptInfoBtn, refreshBalanceBtn, 
+    apiBalanceSpan, balanceLastUpdatedDiv;
 
 // 初始化
 document.addEventListener('DOMContentLoaded', function() {
   console.log('侧边栏已加载');
+
+  // 初始化 DOM 元素缓存
+  chartAnalysisElement = document.getElementById('chart-analysis');
+  chartPreviewImg = document.getElementById('chart-preview');
+  analyzeChartBtn = document.getElementById('analyze-chart-btn');
+  uploadChartContainer = document.getElementById('upload-chart-container');
+  analyzeChartContainer = document.getElementById('analyze-chart-container');
+  uploadChartBtn = document.getElementById('upload-chart-btn');
+  chartFileInput = document.getElementById('chart-file-input');
+  saveSettingsBtn = document.getElementById('save-settings');
+  apiKeyInput = document.getElementById('api-key');
+  aiModelSelect = document.getElementById('ai-model');
+  promptTemplateTextarea = document.getElementById('prompt-template');
+  priceInfoDiv = document.getElementById('price-info');
+  promptInfoDiv = document.getElementById('prompt-info');
+  togglePriceInfoBtn = document.getElementById('toggle-price-info');
+  togglePromptInfoBtn = document.getElementById('toggle-prompt-info');
+  refreshBalanceBtn = document.getElementById('refresh-balance');
+  apiBalanceSpan = document.getElementById('api-balance');
+  balanceLastUpdatedDiv = document.getElementById('balance-last-updated');
   
   // 加载模型选项
   loadModelOptions();
@@ -15,31 +42,27 @@ document.addEventListener('DOMContentLoaded', function() {
   loadPriceInfo();
   
   // 设置事件监听器
-  document.getElementById('save-settings').addEventListener('click', function() {
+  saveSettingsBtn.addEventListener('click', function() {
     console.log('保存按钮被点击');
     saveSettings();
   });
   
   // 添加价格信息折叠/展开功能
-  document.getElementById('toggle-price-info').addEventListener('click', function() {
-    const priceInfo = document.getElementById('price-info');
-    const isVisible = priceInfo.style.display !== 'none';
-    
-    priceInfo.style.display = isVisible ? 'none' : 'block';
+  togglePriceInfoBtn.addEventListener('click', function() {
+    const isVisible = priceInfoDiv.style.display !== 'none';
+    priceInfoDiv.style.display = isVisible ? 'none' : 'block';
     this.textContent = isVisible ? '查看价格对比 ▼' : '隐藏价格对比 ▲';
   });
   
   // 添加提示词信息折叠/展开功能
-  document.getElementById('toggle-prompt-info').addEventListener('click', function() {
-    const promptInfo = document.getElementById('prompt-info');
-    const isVisible = promptInfo.style.display !== 'none';
-    
-    promptInfo.style.display = isVisible ? 'none' : 'block';
+  togglePromptInfoBtn.addEventListener('click', function() {
+    const isVisible = promptInfoDiv.style.display !== 'none';
+    promptInfoDiv.style.display = isVisible ? 'none' : 'block';
     this.textContent = isVisible ? '查看默认提示词 ▼' : '隐藏默认提示词 ▲';
   });
   
   // 添加刷新余额按钮事件
-  document.getElementById('refresh-balance').addEventListener('click', function() {
+  refreshBalanceBtn.addEventListener('click', function() {
     console.log('刷新余额按钮被点击');
     queryApiBalance();
   });
@@ -51,10 +74,30 @@ document.addEventListener('DOMContentLoaded', function() {
   loadApiBalance();
   
   // 添加图表分析按钮事件
-  document.getElementById('analyze-chart-btn').addEventListener('click', async function() {
+  analyzeChartBtn.addEventListener('click', async function() {
     console.log('分析按钮被点击');
     await captureAndAnalyzeChart();
   });
+
+  // 添加图表上传按钮事件
+  uploadChartBtn.addEventListener('click', function() {
+    chartFileInput.click();
+  });
+
+  chartFileInput.addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const imageDataUrl = e.target.result;
+        analyzeUploadedChart(imageDataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+  
+  // 更新按钮可见性
+  updateButtonVisibility();
   
   // 添加标签切换功能
   setupTabNavigation();
@@ -84,9 +127,8 @@ function setupTabNavigation() {
 
 // 从配置文件加载模型选项
 function loadModelOptions() {
-  const modelSelect = document.getElementById('ai-model');
   // 清空现有选项
-  modelSelect.innerHTML = '';
+  aiModelSelect.innerHTML = '';
   
   // 从配置添加选项
   AI_MODELS.MODELS_INFO.forEach(model => {
@@ -97,7 +139,7 @@ function loadModelOptions() {
     if (model.name === AI_MODELS.DEFAULT) {
       option.selected = true;
     }
-    modelSelect.appendChild(option);
+    aiModelSelect.appendChild(option);
   });
   
   console.log('已加载模型选项');
@@ -163,7 +205,7 @@ function loadSettings() {
     // 加载 API 密钥
     if (result[STORAGE_KEYS.API_KEY]) {
       apiKey = result[STORAGE_KEYS.API_KEY];
-      document.getElementById('api-key').value = apiKey;
+      apiKeyInput.value = apiKey;
       console.log('API 密钥已加载:', apiKey.substring(0, 3) + '...');
     } else {
       console.log('未找到保存的 API 密钥');
@@ -172,17 +214,17 @@ function loadSettings() {
     
     // 加载保存的模型设置
     if (result[STORAGE_KEYS.AI_MODEL]) {
-      document.getElementById('ai-model').value = result[STORAGE_KEYS.AI_MODEL];
+      aiModelSelect.value = result[STORAGE_KEYS.AI_MODEL];
       console.log('AI 模型已加载:', result[STORAGE_KEYS.AI_MODEL]);
     }
     
     // 加载保存的提示词模板
     if (result[STORAGE_KEYS.PROMPT_TEMPLATE]) {
-      document.getElementById('prompt-template').value = result[STORAGE_KEYS.PROMPT_TEMPLATE];
+      promptTemplateTextarea.value = result[STORAGE_KEYS.PROMPT_TEMPLATE];
       console.log('提示词模板已加载');
     } else {
       // 如果没有保存的提示词，使用默认提示词
-      document.getElementById('prompt-template').value = DEFAULT_PROMPTS.CHART_ANALYSIS;
+      promptTemplateTextarea.value = DEFAULT_PROMPTS.CHART_ANALYSIS;
       console.log('使用默认提示词模板');
     }
   });
@@ -192,13 +234,13 @@ function loadSettings() {
 function saveSettings() {
   console.log('保存设置');
   // 获取用户输入的 API 密钥
-  const userApiKey = document.getElementById('api-key').value.trim();
+  const userApiKey = apiKeyInput.value.trim();
   
   // 获取选中的 AI 模型
-  const selectedModel = document.getElementById('ai-model').value;
+  const selectedModel = aiModelSelect.value;
   
   // 获取提示词模板
-  const promptTemplate = document.getElementById('prompt-template').value.trim() || DEFAULT_PROMPTS.CHART_ANALYSIS;
+  const promptTemplate = promptTemplateTextarea.value.trim() || DEFAULT_PROMPTS.CHART_ANALYSIS;
   
   // 保存到chrome.storage
   const settingsObj = {};
@@ -217,23 +259,98 @@ function saveSettings() {
     }
     
     // 显示保存成功消息
-    const saveBtn = document.getElementById('save-settings');
-    const originalText = saveBtn.textContent;
-    saveBtn.textContent = '✓ 设置已保存';
-    saveBtn.style.backgroundColor = '#28a745';
+    const originalText = saveSettingsBtn.textContent;
+    saveSettingsBtn.textContent = '✓ 设置已保存';
+    saveSettingsBtn.style.backgroundColor = '#28a745';
     
     // 3秒后恢复按钮文本
     setTimeout(() => {
-      saveBtn.textContent = originalText;
-      saveBtn.style.backgroundColor = '';
+      saveSettingsBtn.textContent = originalText;
+      saveSettingsBtn.style.backgroundColor = '';
     }, 3000);
   });
+}
+
+// 停止加载动画
+function stopLoadingAnimation() {
+  if (loadingInterval) {
+    clearInterval(loadingInterval);
+    loadingInterval = null;
+  }
+}
+
+// 启动加载动画
+function startLoadingAnimation(element, text = '正在分析图表') {
+  stopLoadingAnimation(); // 先停止任何可能正在运行的动画
+  let dots = 1;
+  
+  // 立即显示初始状态
+  element.innerHTML = `<div class="loading">${text}...</div>`;
+  
+  loadingInterval = setInterval(() => {
+    dots = (dots % 3) + 1; // 循环 1, 2, 3
+    let dotString = '.'.repeat(dots);
+    element.innerHTML = `<div class="loading">${text}${dotString}</div>`;
+  }, 500); // 每半秒更新一次
+}
+
+// 根据当前 URL 更新按钮可见性
+async function updateButtonVisibility() {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  const currentTab = tabs[0];
+  const url = currentTab.url;
+
+  // 检查URL是否有效且包含协议
+  const isSupported = url && (url.includes('okx.com') || url.includes('tradingview.com') || url.includes('gate.com') || url.includes('binance.com'));
+
+  if (isSupported) {
+    analyzeChartContainer.style.display = 'block';
+    uploadChartContainer.style.display = 'none';
+  } else {
+    analyzeChartContainer.style.display = 'none';
+    uploadChartContainer.style.display = 'block';
+  }
+}
+
+// 分析上传的图表
+async function analyzeUploadedChart(imageDataUrl) {
+  console.log('开始分析上传的图表');
+  try {
+    if (!apiKey) {
+      showApiKeyGuide();
+      return;
+    }
+
+    startLoadingAnimation(chartAnalysisElement);
+
+    chartPreviewImg.src = imageDataUrl;
+    chartPreviewImg.style.display = 'inline';
+
+    const analysis = await analyzeChartWithAI(imageDataUrl);
+
+    stopLoadingAnimation();
+    console.log('显示分析结果');
+    chartAnalysisElement.innerHTML = `<div style="white-space: pre-line;">${analysis}</div>`;
+
+    chrome.storage.local.get([STORAGE_KEYS.AI_MODEL], function(result) {
+      const selectedModel = result[STORAGE_KEYS.AI_MODEL] || AI_MODELS.DEFAULT;
+      const estimatedCost = estimateApiCost(selectedModel, analysis.length);
+
+      const costElement = document.createElement('div');
+      costElement.className = 'cost-estimate';
+      costElement.innerHTML = `<small>估计费用: ${estimatedCost} CA币</small>`;
+      chartAnalysisElement.appendChild(costElement);
+    });
+  } catch (error) {
+    stopLoadingAnimation();
+    console.error('图表分析失败:', error);
+    chartAnalysisElement.innerHTML = `<div style="color: red;">分析失败: ${error.message}</div>`;
+  }
 }
 
 // 显示 API 密钥获取指南
 function showApiKeyGuide() {
   console.log('显示 API 密钥获取指南');
-  const chartAnalysisElement = document.getElementById('chart-analysis');
   chartAnalysisElement.innerHTML = `
     <div style="padding: 10px; background-color: #f8f9fa; border-radius: 4px; border-left: 3px solid #4a90e2;">
       <h3>如何获取 ChatAnywhere API 密钥</h3>
@@ -267,37 +384,24 @@ async function captureAndAnalyzeChart() {
     
     console.log('当前标签页URL:', currentTab.url);
     
-    // 检查是否在支持的网站上
-    const isOKX = currentTab.url.includes('okx.com');
-    const isTradingView = currentTab.url.includes('tradingview.com');
-    const isGate = currentTab.url.includes('gate.com');
-    const isBinance = currentTab.url.includes('binance.com');
-    const isSupportedExchange = isOKX || isTradingView || isGate || isBinance;
-    
-    if (!isSupportedExchange) {
-      alert('请在 OKX、TradingView、Gate 或 Binance 网站上使用此功能');
-      return;
-    }
-    
     // 显示加载状态
-    const chartAnalysisElement = document.getElementById('chart-analysis');
-    chartAnalysisElement.innerHTML = '<div class="loading">正在截取图表...</div>';
+    startLoadingAnimation(chartAnalysisElement, '正在截取图表');
     
     // 捕获当前标签页的截图
     const screenshot = await captureVisibleTab(currentTab.id);
     
     // 显示截图预览
-    const chartPreviewImg = document.getElementById('chart-preview');
     chartPreviewImg.src = screenshot;
     chartPreviewImg.style.display = 'inline'; // 显示图片
     
-    // 更新加载状态
-    chartAnalysisElement.innerHTML = '<div class="loading">正在分析图表...</div>';
+    // 更新加载状态并启动动画
+    startLoadingAnimation(chartAnalysisElement);
     
     // 使用 API 分析
     const analysis = await analyzeChartWithAI(screenshot);
     
-    // 显示分析结果
+    // 停止动画并显示结果
+    stopLoadingAnimation();
     console.log('显示分析结果');
     chartAnalysisElement.innerHTML = `<div style="white-space: pre-line;">${analysis}</div>`;
     
@@ -314,8 +418,9 @@ async function captureAndAnalyzeChart() {
     });
     
   } catch (error) {
+    stopLoadingAnimation(); // 确保在出错时也停止动画
     console.error('图表分析失败:', error);
-    document.getElementById('chart-analysis').innerHTML = `<div style="color: red;">分析失败: ${error.message}</div>`;
+    chartAnalysisElement.innerHTML = `<div style="color: red;">分析失败: ${error.message}</div>`;
   }
 }
 
@@ -337,99 +442,113 @@ function captureVisibleTab(tabId) {
 
 // 使用 ChatAnywhere API 分析图表
 async function analyzeChartWithAI(imageDataUrl) {
-  console.log('开始使用 ChatAnywhere API 分析图表');
+  console.log('--- 开始 AI 图表分析 (流式处理模式) ---');
   if (!apiKey) {
     console.warn('未设置 API 密钥');
     throw new Error('请先设置 API 密钥');
   }
-  
+
   try {
-    // 获取模型和提示词
-    const modelAndPrompt = await new Promise(resolve => {
-      chrome.storage.local.get([
-        STORAGE_KEYS.AI_MODEL, 
-        STORAGE_KEYS.PROMPT_TEMPLATE
-      ], function(result) {
-        resolve({
+    const { selectedModel, promptTemplate } = await new Promise(resolve => {
+      chrome.storage.local.get(
+        [STORAGE_KEYS.AI_MODEL, STORAGE_KEYS.PROMPT_TEMPLATE],
+        result => resolve({
           selectedModel: result[STORAGE_KEYS.AI_MODEL] || AI_MODELS.DEFAULT,
           promptTemplate: result[STORAGE_KEYS.PROMPT_TEMPLATE] || DEFAULT_PROMPTS.CHART_ANALYSIS
-        });
-      });
+        })
+      );
     });
-    
-    const { selectedModel, promptTemplate } = modelAndPrompt;
-    console.log('使用模型:', selectedModel);
-    console.log('使用提示词模板:', promptTemplate.substring(0, 30) + '...');
-    
-    // 检查是否是支持图像的模型
+
     const modelInfo = getModelInfo(selectedModel);
     if (!modelInfo.supportsImages) {
-      alert(`当前模型不支持图像分析，请选择 ${AI_MODELS.DEFAULT} 或其他支持图像的模型`);
-      throw new Error('当前模型不支持图像分析');
+      const errorMsg = `当前模型 (${selectedModel}) 不支持图像分析，请在设置中选择其他模型。`;
+      alert(errorMsg);
+      throw new Error(errorMsg);
     }
-    
-    // 使用统一的提示词
+
     const enhancedPrompt = `这是一个加密货币交易图表。${promptTemplate}`;
-    
-    // 压缩图像以减少 token 使用
     const compressedImage = await compressImage(imageDataUrl, CHART_CONFIG.MAX_IMAGE_WIDTH);
-    console.log('图像已压缩，原始大小:', imageDataUrl.length, '压缩后:', compressedImage.length);
-    
-    // 构建请求体
+
     const requestBody = {
       model: selectedModel,
       messages: [
         {
           role: "user",
           content: [
-            {
-              type: "text",
-              text: enhancedPrompt
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: compressedImage
-              }
-            }
+            { type: "text", text: enhancedPrompt },
+            { type: "image_url", image_url: { url: compressedImage } }
           ]
         }
       ],
-      max_tokens: CHART_CONFIG.MAX_TOKENS
+      max_tokens: CHART_CONFIG.MAX_TOKENS,
+      stream: true // 明确开启流式响应
     };
-    
-    console.log('发送 API 请求到 ChatAnywhere，使用模型:', selectedModel);
-    
-    // 使用 ChatAnywhere API
+    console.log('--- 准备发送到 API 的请求体 (Request Body): ---');
+    console.log(JSON.stringify(requestBody, null, 2));
+
     const apiEndpoint = API_CONFIG.CHAT_ANYWHERE_ENDPOINT;
-    const aiResponse = await fetch(apiEndpoint, {
+    const response = await fetch(apiEndpoint, {
       method: 'POST',
       headers: {
-        'Authorization': `${apiKey}`,
+        'Authorization': apiKey,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(requestBody)
     });
-    
-    console.log('API 响应状态:', aiResponse.status);
-    const data = await aiResponse.json();
-    console.log('API 响应数据:', data);
-    
-    if (data.error) {
-      // 如果是配额错误，显示特定消息
-      if (data.error.message && (data.error.message.includes("quota") || data.error.message.includes("exceeded") || data.error.message.includes("limit"))) {
-        console.error('API 配额超限');
-        throw new Error("API 配额已用完。请检查您的 ChatAnywhere API 使用限制，免费版每天限制200次请求。");
+
+    console.log(`--- API 响应状态码 (Status Code): ${response.status} ---`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API 请求失败:', errorText);
+      throw new Error(`API 请求失败，状态码: ${response.status}, 响应: ${errorText}`);
+    }
+
+    // --- 开始处理流式响应 ---
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let fullContent = '';
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        console.log('--- 流结束 ---');
+        break;
       }
-      console.error('API 错误:', data.error);
-      throw new Error(data.error.message || "API 请求失败");
+      
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // 保留下一次可能不完整的行
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const jsonStr = line.substring(6);
+          if (jsonStr === '[DONE]') {
+            continue;
+          }
+          try {
+            const parsed = JSON.parse(jsonStr);
+            if (parsed.choices && parsed.choices[0].delta && parsed.choices[0].delta.content) {
+              fullContent += parsed.choices[0].delta.content;
+            }
+          } catch (e) {
+            console.error('解析流中的 JSON 失败:', jsonStr, e);
+          }
+        }
+      }
     }
     
-    console.log('API 分析成功');
-    return data.choices[0].message.content;
-    
+    if (fullContent.trim() === "") {
+      console.warn('API 流式响应成功，但未返回任何内容。');
+      throw new Error('API 分析成功，但未返回任何内容。');
+    }
+
+    console.log('--- 分析成功，获取到完整内容 ---');
+    return fullContent;
+
   } catch (error) {
-    console.error('AI 分析图表失败:', error);
+    console.error('--- 在 AI 分析过程中捕获到错误: ---', error);
     throw error;
   }
 }
@@ -512,17 +631,16 @@ function queryApiBalance() {
   }
   
   // 显示加载状态
-  const refreshBtn = document.getElementById('refresh-balance');
-  refreshBtn.classList.add('loading');
-  document.getElementById('api-balance').textContent = '查询中...';
-  document.getElementById('balance-last-updated').textContent = '正在查询...';
+  refreshBalanceBtn.classList.add('loading');
+  apiBalanceSpan.textContent = '查询中...';
+  balanceLastUpdatedDiv.textContent = '正在查询...';
   
   // 向background脚本发送查询请求
   chrome.runtime.sendMessage({
     action: "queryApiBalance"
   }, function(response) {
     // 取消加载状态
-    refreshBtn.classList.remove('loading');
+    refreshBalanceBtn.classList.remove('loading');
     
     if (chrome.runtime.lastError) {
       console.error('发送查询余额请求失败:', chrome.runtime.lastError);
@@ -550,9 +668,6 @@ function queryApiBalance() {
 
 // 显示API余额
 function displayApiBalance(balanceData, timestamp) {
-  const balanceElement = document.getElementById('api-balance');
-  const lastUpdatedElement = document.getElementById('balance-last-updated');
-  
   try {
     console.log('API余额数据:', balanceData);
     
@@ -563,14 +678,14 @@ function displayApiBalance(balanceData, timestamp) {
                       (balanceData.error && balanceData.error.message) || 
                       "查询API余额失败";
                       
-      balanceElement.textContent = "错误";
-      balanceElement.style.color = '#e74c3c'; // 红色表示错误
+      apiBalanceSpan.textContent = "错误";
+      apiBalanceSpan.style.color = '#e74c3c'; // 红色表示错误
       
       // 在更新时间位置显示错误消息
       if (balanceData.error && balanceData.error.code === "401 UNAUTHORIZED") {
-        lastUpdatedElement.innerHTML = `<span style="color:#e74c3c">API密钥无效，请检查您的密钥</span>`;
+        balanceLastUpdatedDiv.innerHTML = `<span style="color:#e74c3c">API密钥无效，请检查您的密钥</span>`;
       } else {
-        lastUpdatedElement.innerHTML = `<span style="color:#e74c3c">${errorMsg}</span>`;
+        balanceLastUpdatedDiv.innerHTML = `<span style="color:#e74c3c">${errorMsg}</span>`;
       }
       return;
     }
@@ -594,17 +709,17 @@ function displayApiBalance(balanceData, timestamp) {
       balanceValue = balanceData.total_amount;
     } else {
       // 无法解析
-      balanceElement.textContent = '数据格式错误';
-      balanceElement.style.color = '#e74c3c';
+      apiBalanceSpan.textContent = '数据格式错误';
+      apiBalanceSpan.style.color = '#e74c3c';
       console.error('未知的余额数据格式:', balanceData);
       return;
     }
     
     // 显示余额值（如果有已使用额度，一并显示）
     if (balanceUsed !== undefined) {
-      balanceElement.textContent = `${balanceValue.toFixed(2)}/${balanceData.balanceTotal.toFixed(2)} CA币`;
+      apiBalanceSpan.textContent = `${balanceValue.toFixed(2)}/${balanceData.balanceTotal.toFixed(2)} CA币`;
     } else {
-      balanceElement.textContent = `${balanceValue.toFixed(2)} CA币`;
+      apiBalanceSpan.textContent = `${balanceValue.toFixed(2)} CA币`;
     }
     
     // 设置余额颜色 - 根据剩余百分比而不是绝对值
@@ -612,22 +727,22 @@ function displayApiBalance(balanceData, timestamp) {
     const usedPercent = balanceData.balanceUsed ? (balanceData.balanceUsed / totalBalance) * 100 : 0;
     
     if (usedPercent > 80) {
-      balanceElement.style.color = '#e74c3c'; // 红色，余额不足
+      apiBalanceSpan.style.color = '#e74c3c'; // 红色，余额不足
     } else if (usedPercent > 50) {
-      balanceElement.style.color = '#f39c12'; // 橙色，余额较低
+      apiBalanceSpan.style.color = '#f39c12'; // 橙色，余额较低
     } else {
-      balanceElement.style.color = '#27ae60'; // 绿色，余额充足
+      apiBalanceSpan.style.color = '#27ae60'; // 绿色，余额充足
     }
     
     // 更新最后查询时间
     if (timestamp) {
       const date = new Date(timestamp);
-      lastUpdatedElement.textContent = `最后更新: ${date.toLocaleString()}`;
+      balanceLastUpdatedDiv.textContent = `最后更新: ${date.toLocaleString()}`;
     }
   } catch (error) {
     console.error('解析余额数据失败:', error);
-    balanceElement.textContent = '格式错误';
-    balanceElement.style.color = '#e74c3c';
-    lastUpdatedElement.textContent = '解析余额数据失败';
+    apiBalanceSpan.textContent = '格式错误';
+    apiBalanceSpan.style.color = '#e74c3c';
+    balanceLastUpdatedDiv.textContent = '解析余额数据失败';
   }
 } 

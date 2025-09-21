@@ -218,7 +218,14 @@
       
       <div id="analysis-tab" class="tab-content active">
         <div class="action-buttons">
-          <button id="analyze-chart-btn" class="primary-btn">分析当前图表</button>
+          <div id="analyze-chart-container">
+            <button id="analyze-chart-btn" class="primary-btn">分析当前图表</button>
+          </div>
+          <div id="upload-chart-container" style="display: none;">
+            <button id="upload-chart-btn" class="primary-btn">上传图表分析</button>
+            <input type="file" id="chart-file-input" accept="image/*" style="display: none;">
+          </div>
+
         </div>
         
         <div class="chart-analysis-container">
